@@ -1,5 +1,5 @@
 import { useInvoice } from '@/contexts/Index';
-import { Accordion } from '@mantine/core';
+import { Accordion, Button } from '@mantine/core';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import duration from 'dayjs/plugin/duration';
@@ -8,13 +8,13 @@ dayjs.extend(customParseFormat);
 dayjs.extend(duration);
 
 const Timelogs = () => {
-    const { timelogs, deleteTimelog } = useInvoice();
+    const { item, deleteItem } = useInvoice();
 
     const handleDelete = (id: string) => {
-        deleteTimelog(id);
+        deleteItem('timelogs', id);
     };
 
-    const timeThing = timelogs.filter(
+    const timeThing = item.timelogs.filter(
         (time) =>
             dayjs(time.timerStart).isBetween(
                 Date.now() - 2592000000,
@@ -29,7 +29,7 @@ const Timelogs = () => {
                 <Accordion.Item value='customization'>
                     <Accordion.Control>Time logs</Accordion.Control>
 
-                    {timelogs.map((time) => (
+                    {item.timelogs.map((time) => (
                         <Accordion.Panel key={time.id}>
                             <p>
                                 {dayjs
@@ -37,7 +37,9 @@ const Timelogs = () => {
                                     .format('HH:mm:ss')}
                             </p>
                             <p>{time.id}</p>
-                            <p onClick={() => handleDelete(time.id)}>x</p>
+                            <Button onClick={() => handleDelete(time.id)}>
+                                Remove
+                            </Button>
                         </Accordion.Panel>
                     ))}
                 </Accordion.Item>
@@ -67,12 +69,9 @@ const Timelogs = () => {
                                 )}
                             </p>
                             <p>{time.id}</p>
-                            <p
-                                style={{ cursor: 'pointer' }}
-                                onClick={() => handleDelete(time.id)}
-                            >
-                                x
-                            </p>
+                            <Button onClick={() => handleDelete(time.id)}>
+                                Remove
+                            </Button>
                         </Accordion.Panel>
                     ))}
                 </Accordion.Item>

@@ -1,17 +1,17 @@
+import { useState, useMemo } from 'react';
 import { useListState } from '@mantine/hooks';
-import { useState } from 'react';
+import { Button } from '@mantine/core';
 import { useInvoice } from '@/contexts/Index';
-import dayjs from 'dayjs';
-import { useMemo } from 'react';
 import { DragDropContext } from 'react-beautiful-dnd';
 import { StrictModeDroppable } from '@/components/StrictModeDroppable';
+import dayjs from 'dayjs';
 import DashItem from '@/components/DashItem';
-import { Button } from '@mantine/core';
 
 function Dashboard() {
-    const { users, projects, tasks, timelogs, invoices } = useInvoice();
+    const { item } = useInvoice();
     const [show, setShow] = useState<Record<string, boolean>>({});
-    const all = invoices
+
+    const all = item.invoices
         .filter((invoice) =>
             dayjs(invoice.create_date).isBetween(
                 new Date().getFullYear(),
@@ -20,26 +20,29 @@ function Dashboard() {
         )
         .map((i) => i.amount);
 
+    const itemLabels = {
+        users: 'Users',
+        projects: 'Projects',
+        tasks: 'Tasks',
+        invoices: 'Invoices',
+        total: 'Total time',
+        calcAll: 'Total amount on invoices',
+    };
+
     const itemLength = useMemo(() => {
         return {
-            users: <p>Users: {users.filter((u) => u.id !== '').length}</p>,
-            projects: (
-                <p>Projects: {projects.filter((p) => p.id !== '').length}</p>
-            ),
-            tasks: <p>Tasks: {tasks.filter((t) => t.id !== '').length}</p>,
-            invoices: (
-                <p>Invoices: {invoices.filter((i) => i.id !== '').length}</p>
-            ),
+            users: item.users.length,
+            projects: item.projects.length,
+            tasks: item.tasks.length,
+            invoices: item.invoices.length,
             total: (
                 <p>
-                    <p>
-                        total time since{' '}
-                        {dayjs().subtract(30, 'day').format('YYYY MM/DD')}
-                    </p>
-
+                    {' '}
+                    Total logged time since{' '}
+                    {dayjs().subtract(30, 'days').format('YYYY MM:DD')}:{' '}
                     {dayjs
                         .duration(
-                            timelogs
+                            item.timelogs
                                 .filter(
                                     (time) =>
                                         dayjs(time.timerStart).isBetween(
@@ -63,19 +66,19 @@ function Dashboard() {
             ),
             calcAll: (
                 <p>
-                    Total price:{' '}
+                    Total since {dayjs().startOf('year').format('YYYY')}:{' '}
                     {Math.round(
                         all.reduce((acc, value) => {
                             return acc + value;
                         }, 0) * 100
                     ) / 100}{' '}
-                    kr
+                    sek
                 </p>
             ),
         };
-    }, [users, projects, tasks, invoices]);
+    }, [item.users, item.projects, item.tasks, item.invoices]);
 
-    const [state, handlers] = useListState<keyof typeof itemLength>([
+    const [state, handlers] = useListState<keyof typeof itemLabels>([
         'users',
         'projects',
         'tasks',
@@ -108,7 +111,7 @@ function Dashboard() {
                         })
                     }
                 >
-                    {state}
+                    {itemLabels[state]}
                 </Button>
             ))}
 

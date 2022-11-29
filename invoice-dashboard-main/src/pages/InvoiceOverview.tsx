@@ -11,6 +11,14 @@ dayjs.extend(customParseFormat);
 dayjs.extend(duration);
 dayjs.extend(isBetween);
 
+type ProjectItem = {
+    id: string;
+    userId: string;
+    name: string;
+    color: string;
+    hourly_rate: number;
+};
+
 type TaskItem = {
     id: string;
     name: string;
@@ -31,59 +39,52 @@ const roundTime = (taskTimeMs: number, resolutionMinutes: number) => {
 };
 
 const InvoiceOverview = () => {
-    const {
-        users,
-        projects,
-        tasks,
-        addInvoice,
-        addHourly,
-        timelogs,
-        invoices,
-        deleteInvoice,
-    } = useInvoice();
+    const { addInvoice, addHourly, item, deleteItem } = useInvoice();
     const [selectedUser, setSelectedUser] = useState('');
     const [selectedProject, setSelectedProject] = useState('');
     const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
     const [resolution, setResolution] = useState(0);
     const [price, setPrice] = useState(0);
 
-    useEffect(() => {
-        const currentPrice = projects.find(
-            (project) => project.userId === selectedUser
-        );
-        if (currentPrice) {
-            setPrice(currentPrice.hourly_rate);
-        }
-    }, [projects, selectedProject]);
-
-    const usersArray = useMemo(() => {
-        return users.map(({ id, name }) => ({
-            value: id,
-            label: name,
-        }));
-    }, [users]);
-
-    const projectsArray = useMemo(() => {
-        return projects
-            .filter((project) => project.userId === selectedUser)
-            .map(({ id, name }) => ({
-                value: id,
-                label: name,
-            }));
-    }, [projects, selectedUser]);
-
     const handleAddHourly = (id: string) => {
         addHourly(id, price);
     };
 
-    const custName = users.find((u) => u.id === selectedUser);
+    const handleDelete = (id: string) => {
+        deleteItem('invoices', id);
+    };
+
+    const custName = item.users.find((u) => u.id === selectedUser);
+
+    const usersArray = useMemo(() => {
+        return item.users.map(({ id, name }) => ({
+            value: id,
+            label: name,
+        }));
+    }, [item.users]);
+
+    const projectItems = useMemo(() => {
+        const result: ProjectItem[] = [];
+        item.projects
+            .filter((projects) => projects.userId === selectedUser)
+            .forEach((project) => {
+                result.push({
+                    id: project.id,
+                    userId: project.userId,
+                    name: project.name,
+                    color: project.color,
+                    hourly_rate: project.hourly_rate,
+                });
+            });
+        return result;
+    }, [item.projects, selectedUser]);
 
     const taskItems = useMemo(() => {
         const result: TaskItem[] = [];
-        tasks
+        item.tasks
             .filter((tasks) => tasks.projectId === selectedProject)
             .forEach((task) => {
-                const taskTime = timelogs
+                const taskTime = item.timelogs
                     .filter((time) => time.taskId === task.id)
                     .reduce((sum, curr) => {
                         return sum + (curr.timerStop - curr.timerStart);
@@ -97,17 +98,29 @@ const InvoiceOverview = () => {
                 });
             });
         return result;
-    }, [tasks, timelogs, resolution, selectedTasks, selectedProject]);
+    }, [item.tasks, item.timelogs, resolution, selectedTasks, selectedProject]);
 
-    const total = useMemo(() => {
-        const p = projects.find((p) => p.id === selectedProject);
-        const hourlyRate = (p && p.hourly_rate) ?? 0;
-        const roundTime = taskItems
-            .filter((item) => item.selected)
-            .reduce((sum, curr) => sum + curr.roundedTime, 0);
-        const calc = hourlyRate * roundTime;
-        return Math.round(calc * 100) / 100;
-    }, [projects, selectedProject, taskItems]);
+    const projectsArray = useMemo(() => {
+        return projectItems
+            .filter((project) => project.userId === selectedUser)
+            .map(({ id, name }) => ({
+                value: id,
+                label: name,
+            }));
+    }, [projectItems, selectedUser]);
+
+    const selectedUserName = item.users.find(
+        (user) => user.id === selectedUser
+    )?.name;
+
+    useEffect(() => {
+        const currentPrice = projectItems.find(
+            (project) => project.userId === selectedUser
+        );
+        if (currentPrice) {
+            setPrice(currentPrice.hourly_rate);
+        }
+    }, [projectItems, selectedProject]);
 
     const handleSelectedTasks = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.checked) {
@@ -132,48 +145,15 @@ const InvoiceOverview = () => {
         addInvoice(data);
     };
 
-    const pows = projects
-        .filter(
-            (project) =>
-                project.userId === selectedUser &&
-                project.id === selectedProject
-        )
-        .map((project) => (
-            <tr key={project.id}>
-                <td>{project.name}</td>
-                <td>
-                    <NumberInput
-                        value={price}
-                        onChange={(price) => setPrice(price || 0)}
-                    />
-                </td>
-                <td>
-                    <Button onClick={() => handleAddHourly(project.id)}>
-                        Add
-                    </Button>
-                </td>
-            </tr>
-        ));
-
-    const handleDelete = (id: string) => {
-        deleteInvoice(id);
-    };
-
-    const selectedUserName = users.find(
-        (user) => user.id === selectedUser
-    )?.name;
-
-    const iows = invoices
-        .filter((i) => i.customer === selectedUserName)
-        .map((invoice) => (
-            <tr key={invoice.id}>
-                <td>{invoice.amount} kr</td>
-                <td>{invoice.customer}</td>
-                <td>{invoice.status}</td>
-
-                <td onClick={() => handleDelete(invoice.id)}>x</td>
-            </tr>
-        ));
+    const total = useMemo(() => {
+        const p = projectItems.find((p) => p.id === selectedProject);
+        const hourlyRate = (p && p.hourly_rate) ?? 0;
+        const roundTime = taskItems
+            .filter((item) => item.selected)
+            .reduce((sum, curr) => sum + curr.roundedTime, 0);
+        const calc = hourlyRate * roundTime;
+        return Math.round(calc * 100) / 100;
+    }, [projectItems, selectedProject, taskItems]);
 
     const handleRound = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const num = parseInt(e.target.value);
@@ -189,6 +169,19 @@ const InvoiceOverview = () => {
         }
     };
 
+    const iows = item.invoices
+        .filter((i) => i.customer === selectedUserName)
+        .map((invoice) => (
+            <tr key={invoice.id}>
+                <td>{invoice.amount} sek</td>
+                <td>{invoice.customer}</td>
+                <td>{invoice.status}</td>
+                <td onClick={() => handleDelete(invoice.id)}>
+                    <Button>Remove</Button>
+                </td>
+            </tr>
+        ));
+
     return (
         <>
             <Select
@@ -197,7 +190,10 @@ const InvoiceOverview = () => {
                 placeholder='Pick one'
                 data={usersArray}
                 value={selectedUser}
-                onChange={(userId) => setSelectedUser(userId || '')}
+                onChange={(userId) => {
+                    setSelectedUser(userId || '');
+                    setSelectedProject('');
+                }}
             />
             {selectedUser && (
                 <Select
@@ -220,7 +216,30 @@ const InvoiceOverview = () => {
                             <th>Hourly price</th>
                         </tr>
                     </thead>
-                    <tbody>{pows}</tbody>
+                    <tbody>
+                        {projectItems.map((project) => (
+                            <tr key={project.id}>
+                                <td>{project.name}</td>
+                                <td>
+                                    <NumberInput
+                                        value={price}
+                                        onChange={(price) =>
+                                            setPrice(price || 0)
+                                        }
+                                    />
+                                </td>
+                                <td>
+                                    <Button
+                                        onClick={() =>
+                                            handleAddHourly(project.id)
+                                        }
+                                    >
+                                        Add
+                                    </Button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
 
                     <thead>
                         <tr>
@@ -262,7 +281,7 @@ const InvoiceOverview = () => {
                                 </Button>
                             </td>
                             <td>
-                                <p>Total price: {total} kr</p>
+                                <p>Total price: {total} sek</p>
                             </td>
                         </tr>
                     </tbody>

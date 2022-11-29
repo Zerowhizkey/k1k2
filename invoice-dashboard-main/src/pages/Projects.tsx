@@ -3,22 +3,23 @@ import { useInvoice } from '@/contexts/Index';
 import { useMemo, useState } from 'react';
 
 function Projects() {
-    const { users, projects, tasks, deleteProject } = useInvoice();
+    const { deleteItem, item } = useInvoice();
     const [selectedUser, setSelectedUser] = useState('');
 
     const handleDelete = (id: string) => {
-        deleteProject(id);
+        deleteItem('projects', id);
     };
 
     const usersArray = useMemo(() => {
-        return users.map(({ id, name }) => ({
+        return item.users.map(({ id, name }) => ({
             value: id,
             label: name,
         }));
-    }, [users]);
+    }, [item.users]);
 
-    const tows = tasks.filter((t) => t.userId === selectedUser).length;
-    const rows = projects
+    const tows = item.tasks.filter((t) => t.userId === selectedUser).length;
+
+    const rows = item.projects
         .filter((project) => project.userId === selectedUser)
         .map((project) => (
             <tr key={project.id}>

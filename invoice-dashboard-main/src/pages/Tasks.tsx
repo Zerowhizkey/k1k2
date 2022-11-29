@@ -3,21 +3,21 @@ import { useInvoice } from '@/contexts/Index';
 import { useMemo, useState } from 'react';
 
 function Tasks() {
-    const { projects, tasks, deleteTask } = useInvoice();
+    const { item, deleteItem } = useInvoice();
     const [selectedProject, setSelectedProject] = useState('');
 
     const handleDelete = (id: string) => {
-        deleteTask(id);
+        deleteItem('tasks', id);
     };
 
     const projectsArray = useMemo(() => {
-        return projects.map(({ id, name }) => ({
+        return item.projects.map(({ id, name }) => ({
             value: id,
             label: name,
         }));
-    }, [projects]);
+    }, [item.projects]);
 
-    const rows = tasks
+    const rows = item.tasks
         .filter((tasks) => tasks.projectId === selectedProject)
         .map((task) => (
             <tr key={task.id}>

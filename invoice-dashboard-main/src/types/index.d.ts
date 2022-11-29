@@ -2,20 +2,28 @@ interface ProviderProps {
     children?: React.ReactNode;
 }
 interface InvoiceContext {
+    loading: boolean;
+    item: ReducerState;
+    addInvoice: (data: Invoice) => void;
+    addHourly: (id: id, data: number) => void;
+    deleteItem: (item: DataTypes, id: id) => void;
+}
+
+interface ReducerState {
     users: User[];
     projects: Project[];
     tasks: Task[];
     timelogs: Timelog[];
     invoices: Invoice[];
-    loading: boolean;
-    deleteTimelog: (id: id) => void;
-    deleteTask: (id: id) => void;
-    deleteProject: (id: id) => void;
-    deleteUser: (id: id) => void;
-    deleteInvoice: (id: id) => void;
-    addInvoice: (data: Invoice) => void;
-    addHourly: (id: Id, data: number) => void;
 }
+
+type Action =
+    | { type: 'users'; data: User[] }
+    | { type: 'projects'; data: Project[] }
+    | { type: 'tasks'; data: Task[] }
+    | { type: 'timelogs'; data: Timelog[] }
+    | { type: 'invoices'; data: Invoice[] }
+    | { type: 'addInvoice'; data: Invoice };
 
 type User = {
     id: string;

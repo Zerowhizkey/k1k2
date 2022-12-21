@@ -8,7 +8,7 @@ import {
 } from 'react';
 import api from '@/api';
 
-const InvoiceContex = createContext<InvoiceContext | null>(null);
+export const InvoiceContex = createContext<InvoiceContext | null>(null);
 
 export const InvoiceProvider = ({ children }: ProviderProps) => {
     const [loading, setLoading] = useState(true);
@@ -98,6 +98,7 @@ export const InvoiceProvider = ({ children }: ProviderProps) => {
 
 export const useInvoice = () => {
     const contextValue = useContext(InvoiceContex);
+    console.log(contextValue, "*****");
     if (!contextValue) {
         throw new Error('UseInvoice is outside InvoiceProvider');
     }

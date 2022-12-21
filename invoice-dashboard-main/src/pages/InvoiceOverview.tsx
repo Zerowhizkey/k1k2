@@ -1,11 +1,11 @@
-import { Table, Select, Checkbox, NumberInput, Button } from '@mantine/core';
-import { useEffect, useMemo, useState } from 'react';
+import { NativeSelect } from '@mantine/core';
+import { useMemo, useState } from 'react';
 import { useInvoice } from '@/contexts/Index';
-import { v4 as uuid } from 'uuid';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import duration from 'dayjs/plugin/duration';
 import isBetween from 'dayjs/plugin/isBetween';
+import InvoiceList from '@/components/InvoiceList';
 
 dayjs.extend(customParseFormat);
 dayjs.extend(duration);
@@ -19,42 +19,10 @@ type ProjectItem = {
     hourly_rate: number;
 };
 
-type TaskItem = {
-    id: string;
-    name: string;
-    time: number;
-    roundedTime: number;
-    selected: boolean;
-};
-
-const roundTime = (taskTimeMs: number, resolutionMinutes: number) => {
-    if (resolutionMinutes > 0) {
-        const roundedMinutes =
-            resolutionMinutes *
-            Math.ceil(taskTimeMs / (resolutionMinutes * 60 * 1000));
-        return dayjs.duration(roundedMinutes, 'minutes').asHours();
-    } else {
-        return dayjs.duration(taskTimeMs, 'milliseconds').asHours();
-    }
-};
-
 const InvoiceOverview = () => {
-    const { addInvoice, addHourly, item, deleteItem } = useInvoice();
+    const { item } = useInvoice();
     const [selectedUser, setSelectedUser] = useState('');
     const [selectedProject, setSelectedProject] = useState('');
-    const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
-    const [resolution, setResolution] = useState(0);
-    const [price, setPrice] = useState(0);
-
-    const handleAddHourly = (id: string) => {
-        addHourly(id, price);
-    };
-
-    const handleDelete = (id: string) => {
-        deleteItem('invoices', id);
-    };
-
-    const custName = item.users.find((u) => u.id === selectedUser);
 
     const usersArray = useMemo(() => {
         return item.users.map(({ id, name }) => ({
@@ -79,27 +47,6 @@ const InvoiceOverview = () => {
         return result;
     }, [item.projects, selectedUser]);
 
-    const taskItems = useMemo(() => {
-        const result: TaskItem[] = [];
-        item.tasks
-            .filter((tasks) => tasks.projectId === selectedProject)
-            .forEach((task) => {
-                const taskTime = item.timelogs
-                    .filter((time) => time.taskId === task.id)
-                    .reduce((sum, curr) => {
-                        return sum + (curr.timerStop - curr.timerStart);
-                    }, 0);
-                result.push({
-                    id: task.id,
-                    name: task.title,
-                    time: taskTime,
-                    roundedTime: roundTime(taskTime, resolution),
-                    selected: selectedTasks.includes(task.id),
-                });
-            });
-        return result;
-    }, [item.tasks, item.timelogs, resolution, selectedTasks, selectedProject]);
-
     const projectsArray = useMemo(() => {
         return projectItems
             .filter((project) => project.userId === selectedUser)
@@ -109,192 +56,34 @@ const InvoiceOverview = () => {
             }));
     }, [projectItems, selectedUser]);
 
-    const selectedUserName = item.users.find(
-        (user) => user.id === selectedUser
-    )?.name;
-
-    useEffect(() => {
-        const currentPrice = projectItems.find(
-            (project) => project.userId === selectedUser
-        );
-        if (currentPrice) {
-            setPrice(currentPrice.hourly_rate);
-        }
-    }, [projectItems, selectedProject]);
-
-    const handleSelectedTasks = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.checked) {
-            setSelectedTasks((prev) => [...prev, e.target.value]);
-        }
-        if (!e.target.checked) {
-            setSelectedTasks((tasks) =>
-                tasks.filter((task) => task !== e.target.value)
-            );
-        }
-    };
-
-    const handleAddInvoice = () => {
-        const data = {
-            id: uuid(),
-            status: 'ej betald',
-            due_date: Date.now() + 2592000000,
-            amount: total,
-            customer: custName?.name || 'unknown',
-            create_date: Date.now(),
-        };
-        addInvoice(data);
-    };
-
-    const total = useMemo(() => {
-        const p = projectItems.find((p) => p.id === selectedProject);
-        const hourlyRate = (p && p.hourly_rate) ?? 0;
-        const roundTime = taskItems
-            .filter((item) => item.selected)
-            .reduce((sum, curr) => sum + curr.roundedTime, 0);
-        const calc = hourlyRate * roundTime;
-        return Math.round(calc * 100) / 100;
-    }, [projectItems, selectedProject, taskItems]);
-
-    const handleRound = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const num = parseInt(e.target.value);
-        if (
-            num === 0 ||
-            num === 1 ||
-            num === 5 ||
-            num === 15 ||
-            num === 30 ||
-            num === 60
-        ) {
-            setResolution(num);
-        }
-    };
-
-    const iows = item.invoices
-        .filter((i) => i.customer === selectedUserName)
-        .map((invoice) => (
-            <tr key={invoice.id}>
-                <td>{invoice.amount} sek</td>
-                <td>{invoice.customer}</td>
-                <td>{invoice.status}</td>
-                <td onClick={() => handleDelete(invoice.id)}>
-                    <Button>Remove</Button>
-                </td>
-            </tr>
-        ));
-
     return (
         <>
-            <Select
-                clearable
-                label='Users'
-                placeholder='Pick one'
-                data={usersArray}
-                value={selectedUser}
-                onChange={(userId) => {
-                    setSelectedUser(userId || '');
-                    setSelectedProject('');
-                }}
-            />
-            {selectedUser && (
-                <Select
-                    clearable
-                    label='Project'
+            {usersArray && usersArray.length && (
+                <NativeSelect
+                    label='Users'
                     placeholder='Pick one'
+                    data={usersArray}
+                    value={selectedUser}
+                    onChange={(e) => {
+                        setSelectedUser(e.target.value || '');
+                        setSelectedProject('');
+                    }}
+                />
+            )}
+            {selectedUser && projectsArray && projectsArray.length && (
+                <NativeSelect
+                    label='Project'
+                    placeholder='Pick another'
                     data={projectsArray}
                     value={selectedProject}
-                    onChange={(projectId) =>
-                        setSelectedProject(projectId || '')
-                    }
+                    onChange={(e) => setSelectedProject(e.target.value || '')}
                 />
             )}
 
-            {selectedProject && (
-                <Table>
-                    <thead>
-                        <tr>
-                            <th>Project</th>
-                            <th>Hourly price</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {projectItems.map((project) => (
-                            <tr key={project.id}>
-                                <td>{project.name}</td>
-                                <td>
-                                    <NumberInput
-                                        value={price}
-                                        onChange={(price) =>
-                                            setPrice(price || 0)
-                                        }
-                                    />
-                                </td>
-                                <td>
-                                    <Button
-                                        onClick={() =>
-                                            handleAddHourly(project.id)
-                                        }
-                                    >
-                                        Add
-                                    </Button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-
-                    <thead>
-                        <tr>
-                            <th>Task</th>
-                            <th>Current time</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {taskItems.map((task) => (
-                            <tr key={task.id}>
-                                <td>{task.name}</td>
-                                <td>
-                                    {dayjs(task.time)
-                                        .subtract(1, 'hour')
-                                        .format('HH:mm:ss')}
-                                </td>
-                                <td>
-                                    <Checkbox
-                                        value={task.id}
-                                        onChange={handleSelectedTasks}
-                                    />
-                                </td>
-                            </tr>
-                        ))}
-                        <tr>
-                            <td>
-                                <select onChange={handleRound}>
-                                    <option value={0}>0</option>
-                                    <option value={1}>1 min</option>
-                                    <option value={5}>5 min</option>
-                                    <option value={15}>15 min</option>
-                                    <option value={30}>30 min</option>
-                                    <option value={60}>60 min</option>
-                                </select>
-                            </td>
-                            <td>
-                                <Button onClick={handleAddInvoice}>
-                                    Create Invoice
-                                </Button>
-                            </td>
-                            <td>
-                                <p>Total price: {total} sek</p>
-                            </td>
-                        </tr>
-                    </tbody>
-                    <thead>
-                        <tr>
-                            <th>Price</th>
-                            <th>Invoice Customer</th>
-                            <th>Invoice Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>{iows}</tbody>
-                </Table>
-            )}
+            <InvoiceList
+                selectedUser={selectedUser}
+                selectedProject={selectedProject}
+            />
         </>
     );
 };

@@ -1,6 +1,7 @@
 import { useProjects } from "../context/ProjectContext";
 import { v4 as uuid } from "uuid";
 import { useState } from "react";
+import UsersList from "../components/UsersList";
 
 const Users = () => {
 	const [name, setName] = useState("");
@@ -22,27 +23,7 @@ const Users = () => {
 	return (
 		<div>
 			<h4>Users</h4>
-			{users ? (
-				users.map((user) => (
-					<ul key={user.id}>
-						<li>
-							<input
-								type="radio"
-								value={user.id}
-								onChange={handleUser}
-								checked={user.id === current.user}
-							/>
-							{user.name}
-							<button onClick={() => deleteUser(user.id)}>X</button>
-						</li>
-					</ul>
-				))
-			) : (
-				<div>
-					<p>No users found</p>
-				</div>
-			)}
-
+			<UsersList current={current} handleUser={handleUser} />
 			<div>
 				<p>Create a user</p>
 				<input type="text" onChange={(e) => setName(e.target.value)} />

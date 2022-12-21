@@ -43,12 +43,12 @@ export const ProjectProvider = ({ children }) => {
 	};
 
 	const getProject = async () => {
-		if (!current.user) return setProjects([]);
+		// if (!current.user) return setProjects([]);
 		const data = await api.projects.get();
-		const filtProject = data.filter(
-			(project) => project.userId === current.user
-		);
-		setProjects(filtProject);
+		// const filtProject = data.filter(
+		// 	(project) => project.userId === current.user
+		// );
+		setProjects(data);
 	};
 
 	const addProject = async (projectData) => {

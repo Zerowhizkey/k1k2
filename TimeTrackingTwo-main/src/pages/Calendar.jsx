@@ -22,7 +22,13 @@ const Calendar = () => {
 		setInputValueTwo(date);
 	};
 
-	if (!times || times.length === 0) return <p>No tasks with any time data</p>;
+	if (!times || times.length === 0)
+		return (
+			<>
+				<h4>Calendar</h4>
+				<p>No tasks with any time data</p>
+			</>
+		);
 	return (
 		<>
 			<h4>Calendar</h4>

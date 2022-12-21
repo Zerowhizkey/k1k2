@@ -15,18 +15,22 @@ const Overview = () => {
 		setTasksOpen(true);
 		setProjectsOpen(false);
 	};
-    
+
 	return (
 		<div>
 			<h4>Overview</h4>
 			<div>
 				{projectsOpen ? (
-					<button onClick={handleClickProjects}>Projects</button>
+					<button onClick={handleClickProjects} data-testid="btn1">
+						Projects
+					</button>
 				) : (
 					<button onClick={handleClickProjects}>Projects</button>
 				)}
 				{projectsOpen ? (
-					<button onClick={handleClickTasks}>Tasks</button>
+					<button onClick={handleClickTasks} data-testid="btn2">
+						Tasks
+					</button>
 				) : (
 					<button onClick={handleClickTasks}>Tasks</button>
 				)}

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { v4 as uuid } from "uuid";
 import { useProjects } from "../context/ProjectContext";
+import ProjectList from "./ProjectList";
 
 const Projects = () => {
 	const [name, setName] = useState("");
@@ -26,31 +27,10 @@ const Projects = () => {
 	return (
 		<div>
 			<h6>Projects</h6>
-			{projects ? (
-				projects.map((project) => (
-					<ul key={project.id}>
-						<li>
-							<input
-								type="radio"
-								value={project.id}
-								onChange={handleProject}
-								checked={project.id === current.project}
-							/>
-							{project.name}
-							<button onClick={() => deleteProject(project.id)}>X</button>
-						</li>
-					</ul>
-				))
-			) : (
-				<p>No projects</p>
-			)}
+			<ProjectList current={current} handleProject={handleProject} />
 			<div>
 				<p>Add a project</p>
-				<input
-					type="text"
-					// value={name}
-					onChange={(e) => setName(e.target.value)}
-				/>
+				<input type="text" onChange={(e) => setName(e.target.value)} />
 				<input type="color" onChange={(e) => setColor(e.target.value)} />
 				<button onClick={handleAddProject}>Add</button>
 			</div>
